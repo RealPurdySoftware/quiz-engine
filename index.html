@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz Engine — Sample Study Set</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #14161B;
+    --surface: #1D2026;
+    --surface-raised: #262A32;
+    --border: #323742;
+    --text-primary: #F2F3F5;
+    --text-secondary: #9CA3AF;
+    --text-tertiary: #6B7280;
+    --accent: #C9FF3D;
+    --accent-dim: #8FB82B;
+    --correct: #4ADE80;
+    --correct-bg: rgba(74, 222, 128, 0.12);
+    --incorrect: #FF6B6B;
+    --incorrect-bg: rgba(255, 107, 107, 0.12);
+    --radius: 10px;
+    --display: 'Oswald', sans-serif;
+    --body: 'Inter', -apple-system, sans-serif;
+    --mono: 'JetBrains Mono', monospace;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    background-image:
+      linear-gradient(180deg, rgba(201,255,61,0.04) 0%, rgba(201,255,61,0) 280px);
+    color: var(--text-primary);
+    font-family: var(--body);
+    line-height: 1.5;
+    min-height: 100vh;
+    padding: 32px 20px 80px;
+  }
+
+  .wrap { max-width: 680px; margin: 0 auto; }
+
+  /* ---------- Header ---------- */
+  .app-header { margin-bottom: 28px; }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  h1#quiz-title {
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: clamp(28px, 5vw, 38px);
+    text-transform: uppercase;
+    letter-spacing: 0.01em;
+    margin: 0 0 6px;
+    color: var(--text-primary);
+  }
+
+  p#quiz-description {
+    color: var(--text-secondary);
+    font-size: 14.5px;
+    margin: 0 0 20px;
+    max-width: 52ch;
+  }
+
+  .header-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .load-btn, .ghost-btn {
+    font-family: var(--body);
+    font-size: 13.5px;
+    font-weight: 500;
+    padding: 9px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+
+  .load-btn:hover, .ghost-btn:hover {
+    border-color: var(--accent-dim);
+    background: var(--surface-raised);
+  }
+
+  .load-btn:focus-visible, .ghost-btn:focus-visible,
+  button:focus-visible, input:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .score-badge {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--text-secondary);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 14px;
+    letter-spacing: 0.04em;
+  }
+
+  .score-badge span { color: var(--accent); font-weight: 600; }
+
+  /* ---------- Schema help ---------- */
+  details.schema-help {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    margin-bottom: 24px;
+    font-size: 13.5px;
+    color: var(--text-secondary);
+  }
+
+  details.schema-help summary {
+    cursor: pointer;
+    font-weight: 500;
+    color: var(--text-primary);
+    list-style: none;
+  }
+  details.schema-help summary::-webkit-details-marker { display: none; }
+  details.schema-help summary::before {
+    content: "+ ";
+    color: var(--accent);
+    font-family: var(--mono);
+  }
+  details.schema-help[open] summary::before { content: "− "; }
+
+  details.schema-help p { margin: 12px 0 8px; }
+
+  details.schema-help pre {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    overflow-x: auto;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+
+  /* ---------- Rep tracker ---------- */
+  .rep-tracker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-bottom: 18px;
+  }
+
+  .rep-tick {
+    width: 16px;
+    height: 8px;
+    border-radius: 2px;
+    background: var(--surface-raised);
+    border: 1px solid var(--border);
+    transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+  }
+  .rep-tick.current {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(201,255,61,0.18);
+  }
+  .rep-tick.correct { background: var(--correct); border-color: var(--correct); }
+  .rep-tick.incorrect { background: var(--incorrect); border-color: var(--incorrect); }
+
+  /* ---------- Question card ---------- */
+  .question-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 26px 26px 22px;
+  }
+
+  .question-meta {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+
+  .question-meta span { color: var(--text-secondary); }
+
+  .question-text {
+    font-family: var(--display);
+    font-weight: 500;
+    font-size: clamp(18px, 3vw, 21px);
+    line-height: 1.4;
+    margin: 0 0 22px;
+    text-transform: none;
+    color: var(--text-primary);
+  }
+
+  .options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .option-btn {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    text-align: left;
+    width: 100%;
+    font-family: var(--body);
+    font-size: 14.5px;
+    color: var(--text-primary);
+    background: var(--surface-raised);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 13px 16px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+
+  .option-btn:hover:not(:disabled) {
+    border-color: var(--accent-dim);
+  }
+
+  .option-btn .letter {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    color: var(--text-tertiary);
+    flex-shrink: 0;
+    width: 18px;
+  }
+
+  .option-btn.selected {
+    border-color: var(--accent);
+    background: rgba(201,255,61,0.07);
+  }
+  .option-btn.selected .letter { color: var(--accent); }
+
+  .option-btn.correct {
+    border-color: var(--correct);
+    background: var(--correct-bg);
+  }
+  .option-btn.correct .letter { color: var(--correct); }
+
+  .option-btn.incorrect {
+    border-color: var(--incorrect);
+    background: var(--incorrect-bg);
+  }
+  .option-btn.incorrect .letter { color: var(--incorrect); }
+
+  .option-btn:disabled { cursor: default; }
+
+  /* ---------- Feedback ---------- */
+  .feedback {
+    margin-top: 18px;
+    padding: 14px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    line-height: 1.55;
+    border-left: 3px solid var(--border);
+    background: var(--surface-raised);
+  }
+  .feedback.is-correct { border-left-color: var(--correct); }
+  .feedback.is-incorrect { border-left-color: var(--incorrect); }
+
+  .feedback .verdict {
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 6px;
+    display: block;
+  }
+  .feedback.is-correct .verdict { color: var(--correct); }
+  .feedback.is-incorrect .verdict { color: var(--incorrect); }
+  .feedback p { margin: 0; color: var(--text-secondary); }
+
+  /* ---------- Actions ---------- */
+  .actions { margin-top: 22px; }
+
+  .primary-btn {
+    font-family: var(--body);
+    font-weight: 600;
+    font-size: 14.5px;
+    padding: 12px 22px;
+    border-radius: 8px;
+    border: none;
+    background: var(--accent);
+    color: #16180D;
+    cursor: pointer;
+    transition: filter 0.15s ease, transform 0.1s ease;
+  }
+  .primary-btn:hover:not(:disabled) { filter: brightness(1.08); }
+  .primary-btn:active:not(:disabled) { transform: scale(0.98); }
+  .primary-btn:disabled {
+    background: var(--surface-raised);
+    color: var(--text-tertiary);
+    cursor: not-allowed;
+  }
+
+  /* ---------- Results ---------- */
+  .results-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 32px 28px;
+    text-align: center;
+  }
+
+  .results-eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .results-score {
+    font-family: var(--display);
+    font-size: clamp(48px, 10vw, 64px);
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1;
+  }
+
+  .results-score span { font-size: 0.4em; color: var(--text-tertiary); font-weight: 500; }
+
+  .results-pct {
+    font-family: var(--mono);
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin: 8px 0 24px;
+  }
+
+  .results-breakdown {
+    text-align: left;
+    border-top: 1px solid var(--border);
+    margin-top: 8px;
+    padding-top: 18px;
+  }
+
+  .breakdown-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 9px 0;
+    font-size: 13.5px;
+    border-bottom: 1px solid var(--border);
+  }
+  .breakdown-row:last-child { border-bottom: none; }
+
+  .breakdown-mark {
+    font-family: var(--mono);
+    font-weight: 600;
+    flex-shrink: 0;
+    width: 18px;
+  }
+  .breakdown-row.right .breakdown-mark { color: var(--correct); }
+  .breakdown-row.wrong .breakdown-mark { color: var(--incorrect); }
+  .breakdown-q { color: var(--text-secondary); }
+
+  .results-actions {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 26px;
+    flex-wrap: wrap;
+  }
+
+  /* ---------- Error state ---------- */
+  .error-banner {
+    background: var(--incorrect-bg);
+    border: 1px solid var(--incorrect);
+    color: var(--text-primary);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 13.5px;
+    margin-bottom: 18px;
+  }
+
+  [hidden] { display: none !important; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+
+  @media (max-width: 480px) {
+    .question-card { padding: 20px 18px 18px; }
+    .score-badge { margin-left: 0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header class="app-header">
+    <div class="eyebrow">Quiz Engine</div>
+    <h1 id="quiz-title">Loading…</h1>
+    <p id="quiz-description"></p>
+    <div class="header-controls">
+      <label class="load-btn" for="file-input">Load Quiz File</label>
+      <input type="file" id="file-input" accept="application/json,.json" hidden>
+      <button id="restart-btn" class="ghost-btn">Restart Quiz</button>
+      <div class="score-badge">SCORE <span id="score-value">0/0</span></div>
+    </div>
+  </header>
+
+  <details class="schema-help">
+    <summary>How to drop in a new quiz</summary>
+    <p>Click <strong>Load Quiz File</strong> and select any <code>.json</code> file shaped like this. Save the file anywhere on your computer — nothing is uploaded anywhere, it's read directly by your browser.</p>
+    <pre>{
+  "title": "Quiz Title",
+  "description": "Optional one-line subtitle",
+  "questions": [
+    {
+      "question": "Question text?",
+      "options": ["Choice A", "Choice B", "Choice C", "Choice D"],
+      "correctIndex": 1,
+      "explanation": "Why that choice is correct."
+    }
+  ]
+}</pre>
+    <p><code>correctIndex</code> is zero-based (0 = first option). Ask Claude to generate future quizzes in this exact format and they'll drop straight in.</p>
+  </details>
+
+  <div id="error-container"></div>
+
+  <main>
+    <div class="rep-tracker" id="rep-tracker"></div>
+
+    <div class="question-card" id="question-card">
+      <div class="question-meta">REP <span id="q-num">1</span> / <span id="q-total">1</span></div>
+      <h2 class="question-text" id="question-text"></h2>
+      <div class="options" id="options-container" role="radiogroup"></div>
+      <div class="feedback" id="feedback-panel" hidden></div>
+      <div class="actions">
+        <button id="check-btn" class="primary-btn" disabled>Check Answer</button>
+        <button id="next-btn" class="primary-btn" hidden>Next Question</button>
+      </div>
+    </div>
+
+    <div class="results-card" id="results-card" hidden>
+      <div class="results-eyebrow">Set Complete</div>
+      <div class="results-score" id="results-score">0<span>/0</span></div>
+      <div class="results-pct" id="results-pct">0% correct</div>
+      <div class="results-breakdown" id="results-breakdown"></div>
+      <div class="results-actions">
+        <button id="retake-btn" class="primary-btn">Retake This Quiz</button>
+        <label class="load-btn" for="file-input-2">Load Different Quiz</label>
+        <input type="file" id="file-input-2" accept="application/json,.json" hidden>
+      </div>
+    </div>
+  </main>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  // ---------- Default quiz (loads immediately, no file needed) ----------
+  const DEFAULT_QUIZ = {
+    title: "Sample Practice Quiz",
+    description: "Sections 1–3: Professional Development, Client Relations, and Basic & Applied Sciences.",
+    questions: [
+      { question: "A client has a BMI of 31.5. According to standard BMI classification, this falls into which category?", options: ["Overweight", "Obese I", "Obese II", "Obese III"], correctIndex: 1, explanation: "BMI 30–34.9 is classified as Obese I. A BMI of 31.5 falls within that range — Obese II doesn't start until 35." },
+      { question: "A client's blood pressure reads 132/78 mm Hg. How would this be classified?", options: ["Elevated", "Stage 1 hypertension", "Stage 2 hypertension", "Hypertensive crisis"], correctIndex: 1, explanation: "Stage 1 is systolic 130–139 OR diastolic 80–89. A systolic of 132 alone is enough to classify this as Stage 1, even though the diastolic reading is still normal." },
+      { question: "Which type of cholesterol is most directly associated with the buildup of arterial plaque?", options: ["HDL", "LDL", "Triglycerides", "Phospholipids"], correctIndex: 1, explanation: "LDL forms the plaque that clogs arteries, which is why it's commonly called 'bad' cholesterol. HDL actually helps remove LDL from the body." },
+      { question: "Which statement correctly differentiates Type 1 from Type 2 diabetes?", options: ["Type 1 results from insulin resistance; Type 2 results from inadequate insulin production", "Type 1 typically has a genetic origin and inadequate insulin production; Type 2 involves insulin resistance", "Type 1 is preventable through diet; Type 2 is not", "Type 1 only affects adults; Type 2 only affects children"], correctIndex: 1, explanation: "Type 1 is typically genetic, with the pancreas producing little or no insulin. Type 2 involves the body producing insulin, but cells becoming resistant to it over time." },
+      { question: "Which of the following correctly lists the Four Ps of marketing?", options: ["Product, Promotion, Profit, Place", "Price, Product, Promotion, Place", "Product, Price, People, Place", "Promotion, Profit, Product, People"], correctIndex: 1, explanation: "The Four Ps are Product, Price, Promotion, and Place." },
+      { question: "Why do most personal training certifications require ongoing continuing education credits to maintain a credential?", options: ["To generate extra fees for the certifying body", "To keep trainers current with evolving research and best practices", "Because state law mandates it for all fitness professionals", "To limit the number of active trainers in the field"], correctIndex: 1, explanation: "Continuing education requirements exist to keep practitioners current with new research, techniques, and safety standards in the field." },
+      { question: "A trainer identifies that a nearby competing gym is opening a new location next month. In a SWOT analysis, this would be classified as a:", options: ["Strength", "Weakness", "Opportunity", "Threat"], correctIndex: 3, explanation: "An expanding competitor is an external factor that could negatively impact the business — a classic threat." },
+      { question: "The LPHC refers to which group of structures?", options: ["Lower pelvis, hips, and core", "Lumbar spine, pelvis, abdomen, and hip", "Legs, pelvis, hamstrings, and core", "Lower posterior hip complex"], correctIndex: 1, explanation: "LPHC = lumbar spine, pelvis, abdomen, and hip musculoskeletal structures, commonly called the 'core.'" },
+      { question: "A client says she exercises because she loves the feeling of being challenged and the stress relief it provides. This is an example of:", options: ["Extrinsic motivation", "Intrinsic motivation", "Social physique anxiety", "Decisional balance"], correctIndex: 1, explanation: "Stress relief and enjoying a challenge come from within the individual rather than external rewards or recognition — the definition of intrinsic motivation." },
+      { question: "Which of the following is an example of a process goal rather than an outcome goal?", options: ["Lose 15 pounds of body fat in 4 months", "Place in the top 10 of a local 10K race", "Walk 30 minutes per day, 5 days per week, starting today", "Achieve a specific level of strength improvement"], correctIndex: 2, explanation: "Process goals describe the specific actions taken. The other options describe end results — outcome goals." },
+      { question: "A client says: \"I haven't started exercising yet, but I've been reading about it and thinking I might start sometime in the next few months.\" Which stage of change does this represent?", options: ["Precontemplation", "Contemplation", "Preparation", "Action"], correctIndex: 1, explanation: "Thinking about change with a timeframe of the next few months — but no action taken yet — is the defining feature of contemplation." },
+      { question: "Which of the following is an example of an open-ended question?", options: ["\"Do you enjoy exercise?\"", "\"Can you commit to three sessions a week?\"", "\"What challenges do you see in reaching your goal, and how might you overcome them?\"", "\"Are you motivated to start today?\""], correctIndex: 2, explanation: "Open-ended questions invite explanation rather than a yes/no response." },
+      { question: "Which of the following goals best meets the SMART criteria?", options: ["\"I want to get healthier this year.\"", "\"I will lose 10 pounds of body fat in 3 months by reducing daily calories from 3,000 to 2,000 and exercising at moderate intensity for 150 minutes per week.\"", "\"I will lose 50 pounds in two months for my reunion.\"", "\"I will gain muscle so I look good for summer.\""], correctIndex: 1, explanation: "This goal is specific, measurable, has a defined timeframe, and is realistic — the hallmarks of SMART." },
+      { question: "A client's friend offers to drive her to the gym three times a week because she doesn't have reliable transportation. This is an example of:", options: ["Emotional support", "Informational support", "Instrumental support", "Companionship support"], correctIndex: 2, explanation: "Tangible assistance like transportation falls under instrumental support." },
+      { question: "Self-efficacy is best defined as:", options: ["A client's physical capacity to complete an exercise", "A client's belief in their own ability to complete a task or reach a goal", "The amount of social support a client receives", "A client's current stage of change"], correctIndex: 1, explanation: "Self-efficacy is belief in one's own ability to complete a task — essentially self-confidence specific to a behavior." },
+      { question: "Which coaching technique is most associated with motivational interviewing?", options: ["Giving direct commands about what the client must do", "Developing a discrepancy between a client's current state and their ideal state", "Avoiding any discussion of a client's ambivalence", "Focusing exclusively on outcome goals"], correctIndex: 1, explanation: "Creating a gap between where the client is now and where they want to be is a core motivational interviewing technique used to build intrinsic motivation." },
+      { question: "Which sensory receptor is most sensitive to changes in muscular tension and the rate of that change?", options: ["Muscle spindle", "Golgi tendon organ", "Mechanoreceptor", "Nociceptor"], correctIndex: 1, explanation: "GTOs sit at the muscle-tendon junction and respond to tension changes; muscle spindles respond to length changes instead." },
+      { question: "Which branch of the autonomic nervous system increases neural activity and places the body in a heightened state?", options: ["Somatic nervous system", "Parasympathetic nervous system", "Sympathetic nervous system", "Central nervous system"], correctIndex: 2, explanation: "The sympathetic branch is the 'fight or flight' system; parasympathetic does the opposite." },
+      { question: "The patella is an example of which type of bone?", options: ["Long", "Short", "Irregular", "Sesamoid"], correctIndex: 3, explanation: "The patella is the classic example of a sesamoid bone." },
+      { question: "Which segment of the vertebral column supports the most body weight and attaches to many back muscles?", options: ["Cervical spine", "Thoracic spine", "Lumbar spine", "Sacrum"], correctIndex: 2, explanation: "The lumbar spine is the largest segment and supports the most body weight." },
+      { question: "Which muscle fiber type is larger, produces more force, and fatigues quickly?", options: ["Type I fibers", "Type II fibers", "Sesamoid fibers", "Myofibril fibers"], correctIndex: 1, explanation: "Type II (fast-twitch) fibers are larger, produce more force, and fatigue quickly." },
+      { question: "What is the key functional difference between a tendon and a ligament?", options: ["Tendons connect bone to bone; ligaments connect muscle to bone", "Tendons connect muscle to bone; ligaments connect bone to bone", "Tendons and ligaments perform the same function", "Only ligaments are involved in muscular contraction"], correctIndex: 1, explanation: "Tendons connect muscle to bone. Ligaments connect bone to bone." },
+      { question: "Which of the following correctly traces the path of deoxygenated blood through the heart?", options: ["Left atrium → left ventricle → lungs", "Right atrium → right ventricle → lungs", "Right ventricle → right atrium → body", "Left ventricle → right atrium → lungs"], correctIndex: 1, explanation: "The right atrium receives deoxygenated blood from the body and sends it to the right ventricle, which sends it to the lungs for oxygenation." },
+      { question: "A client's resting respiratory rate is measured at 26 breaths per minute. This would be classified as:", options: ["Bradypnea", "Normal respiratory rate", "Tachypnea", "Dyspnea"], correctIndex: 2, explanation: "A rate above 24 breaths/minute is tachypnea (too fast); below 8 is bradypnea (too slow)." },
+      { question: "Which hormone works in direct opposition to insulin to help regulate blood glucose levels?", options: ["Cortisol", "Glucagon", "Growth hormone", "Testosterone"], correctIndex: 1, explanation: "Insulin and glucagon work opposite each other to regulate blood glucose." },
+      { question: "Internal rotation and external rotation of the limbs occur primarily in which plane of motion?", options: ["Sagittal plane", "Frontal plane", "Transverse plane", "Coronal plane"], correctIndex: 2, explanation: "Internal/external rotation of the limbs occurs in the transverse plane." },
+      { question: "During a squat, the hamstring complex and erector spinae assist the gluteus maximus in producing hip extension. In this context, they are acting as:", options: ["Agonists", "Synergists", "Stabilizers", "Antagonists"], correctIndex: 1, explanation: "Synergists assist the agonist (gluteus maximus) in producing the movement." },
+      { question: "Which of the following is an example of a closed-chain exercise?", options: ["Biceps curl", "Leg extension", "Push-up", "Lat pulldown"], correctIndex: 2, explanation: "Closed-chain exercises anchor the distal segment to the ground or an immovable object. The other three are classic open-chain examples." },
+      { question: "The human forearm performing a biceps curl (elbow as fulcrum, biceps as effort, hand/dumbbell as resistance) is an example of which class of lever?", options: ["First-class lever", "Second-class lever", "Third-class lever", "Fourth-class lever"], correctIndex: 2, explanation: "The effort (biceps) sits between the fulcrum (elbow) and the resistance (hand) — the most common lever type in the human body." },
+      { question: "Which energy system provides ATP most rapidly but can only sustain activity for approximately 10–15 seconds?", options: ["Oxidative system", "Glycolytic system", "ATP-PC system", "Electron transport chain"], correctIndex: 2, explanation: "The ATP-PC system produces ATP fastest, but is limited to roughly 10–15 seconds due to limited phosphocreatine stores." },
+      { question: "A client continues to burn more calories than usual for a period after finishing a workout. This is known as:", options: ["Resting metabolic rate (RMR)", "Excess postexercise oxygen consumption (EPOC)", "Thermic effect of food (TEF)", "Nonexercise activity thermogenesis (NEAT)"], correctIndex: 1, explanation: "EPOC describes the elevated post-exercise metabolic state." },
+      { question: "According to the AMDR, carbohydrates should make up what percentage of total daily calories?", options: ["10–35%", "20–35%", "45–65%", "55–75%"], correctIndex: 2, explanation: "The AMDR for carbohydrates is 45–65% of total calories (compare: protein 10–35%, fat 20–35%)." },
+      { question: "Which best describes the difference between glycemic index and glycemic load?", options: ["They measure the exact same thing", "Glycemic index reflects a food's effect on blood sugar; glycemic load accounts for both glycemic index and the quantity of carbohydrate consumed", "Glycemic load only applies to fats and proteins", "Glycemic index accounts for portion size; glycemic load does not"], correctIndex: 1, explanation: "Glycemic load is considered the more complete measure because it factors in both the glycemic index and the actual amount of carbohydrate consumed." },
+      { question: "What is a typical effective daily dose of creatine for muscle saturation?", options: ["0.5 g per day", "5 g per day", "25 g per day", "50 g per day"], correctIndex: 1, explanation: "5 g per day is the typical dose cited for full muscle creatine saturation." },
+      { question: "Which of the following is within a fitness professional's scope of practice regarding nutrition?", options: ["Designing a medical nutrition therapy plan for a client with diabetes", "Prescribing a specific dietary supplement to treat a client's health condition", "Providing general nutrition guidelines and referring the client to a registered dietitian for specialized needs", "Diagnosing a nutrient deficiency"], correctIndex: 2, explanation: "Fitness professionals can give general nutrition guidance and refer clients to qualified professionals — medical nutrition therapy, diagnosis, and supplement prescriptions all fall outside CPT scope of practice." }
+    ]
+  };
+
+  // ---------- State ----------
+  let quiz = null;
+  let current = 0;
+  let score = 0;
+  let answered = [];      // per-question: { selected, correct } or null
+  let selectedOption = null;
+  let isChecked = false;
+
+  // ---------- DOM refs ----------
+  const titleEl = document.getElementById('quiz-title');
+  const descEl = document.getElementById('quiz-description');
+  const scoreValEl = document.getElementById('score-value');
+  const repTracker = document.getElementById('rep-tracker');
+  const qNumEl = document.getElementById('q-num');
+  const qTotalEl = document.getElementById('q-total');
+  const questionTextEl = document.getElementById('question-text');
+  const optionsContainer = document.getElementById('options-container');
+  const feedbackPanel = document.getElementById('feedback-panel');
+  const checkBtn = document.getElementById('check-btn');
+  const nextBtn = document.getElementById('next-btn');
+  const questionCard = document.getElementById('question-card');
+  const resultsCard = document.getElementById('results-card');
+  const errorContainer = document.getElementById('error-container');
+  const fileInput = document.getElementById('file-input');
+  const fileInput2 = document.getElementById('file-input-2');
+  const restartBtn = document.getElementById('restart-btn');
+  const retakeBtn = document.getElementById('retake-btn');
+
+  // ---------- Validation ----------
+  function validateQuiz(data) {
+    if (!data || typeof data !== 'object') return 'File does not contain a valid object.';
+    if (!Array.isArray(data.questions) || data.questions.length === 0) return 'Missing or empty "questions" array.';
+    for (let i = 0; i < data.questions.length; i++) {
+      const q = data.questions[i];
+      if (typeof q.question !== 'string') return `Question ${i + 1} is missing "question" text.`;
+      if (!Array.isArray(q.options) || q.options.length < 2) return `Question ${i + 1} needs at least 2 "options".`;
+      if (typeof q.correctIndex !== 'number' || q.correctIndex < 0 || q.correctIndex >= q.options.length) {
+        return `Question ${i + 1} has an invalid "correctIndex".`;
+      }
+    }
+    return null;
+  }
+
+  function showError(msg) {
+    errorContainer.innerHTML = `<div class="error-banner">${msg}</div>`;
+  }
+
+  function clearError() {
+    errorContainer.innerHTML = '';
+  }
+
+  // ---------- Load / start ----------
+  function loadQuiz(data) {
+    const err = validateQuiz(data);
+    if (err) { showError(`Couldn't load that file — ${err}`); return; }
+    clearError();
+    quiz = data;
+    current = 0;
+    score = 0;
+    answered = new Array(quiz.questions.length).fill(null);
+    titleEl.textContent = quiz.title || 'Quiz';
+    descEl.textContent = quiz.description || '';
+    qTotalEl.textContent = quiz.questions.length;
+    resultsCard.hidden = true;
+    questionCard.hidden = false;
+    buildRepTracker();
+    renderQuestion();
+    updateScoreBadge();
+  }
+
+  function buildRepTracker() {
+    repTracker.innerHTML = '';
+    quiz.questions.forEach((_, i) => {
+      const tick = document.createElement('div');
+      tick.className = 'rep-tick';
+      tick.dataset.index = i;
+      repTracker.appendChild(tick);
+    });
+    updateRepTracker();
+  }
+
+  function updateRepTracker() {
+    const ticks = repTracker.children;
+    for (let i = 0; i < ticks.length; i++) {
+      const tick = ticks[i];
+      tick.classList.remove('current', 'correct', 'incorrect');
+      if (answered[i]) {
+        tick.classList.add(answered[i].correct ? 'correct' : 'incorrect');
+      } else if (i === current) {
+        tick.classList.add('current');
+      }
+    }
+  }
+
+  function updateScoreBadge() {
+    const attempted = answered.filter(a => a !== null).length;
+    scoreValEl.textContent = `${score}/${attempted}`;
+  }
+
+  // ---------- Render question ----------
+  function renderQuestion() {
+    const q = quiz.questions[current];
+    qNumEl.textContent = current + 1;
+    questionTextEl.textContent = q.question;
+    optionsContainer.innerHTML = '';
+    feedbackPanel.hidden = true;
+    feedbackPanel.className = 'feedback';
+    selectedOption = null;
+    isChecked = false;
+    checkBtn.hidden = false;
+    checkBtn.disabled = true;
+    nextBtn.hidden = true;
+
+    const letters = ['A', 'B', 'C', 'D', 'E', 'F'];
+    q.options.forEach((opt, i) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'option-btn';
+      btn.setAttribute('role', 'radio');
+      btn.setAttribute('aria-checked', 'false');
+      btn.innerHTML = `<span class="letter">${letters[i]}</span><span>${opt}</span>`;
+      btn.addEventListener('click', () => selectOption(i, btn));
+      optionsContainer.appendChild(btn);
+    });
+
+    // If this question was already answered (e.g. navigating back isn't supported,
+    // but restart/retake reuses this), reflect prior state.
+    const prior = answered[current];
+    if (prior) {
+      revealAnswer(prior.selected);
+    }
+
+    updateRepTracker();
+  }
+
+  function selectOption(index, btnEl) {
+    if (isChecked) return;
+    selectedOption = index;
+    [...optionsContainer.children].forEach((el, i) => {
+      el.classList.toggle('selected', i === index);
+      el.setAttribute('aria-checked', i === index ? 'true' : 'false');
+    });
+    checkBtn.disabled = false;
+  }
+
+  function revealAnswer(selectedIdx) {
+    const q = quiz.questions[current];
+    isChecked = true;
+    selectedOption = selectedIdx;
+    const correctIdx = q.correctIndex;
+    const wasCorrect = selectedIdx === correctIdx;
+
+    [...optionsContainer.children].forEach((el, i) => {
+      el.disabled = true;
+      el.classList.remove('selected');
+      if (i === correctIdx) el.classList.add('correct');
+      if (i === selectedIdx && i !== correctIdx) el.classList.add('incorrect');
+    });
+
+    feedbackPanel.hidden = false;
+    feedbackPanel.classList.add(wasCorrect ? 'is-correct' : 'is-incorrect');
+    feedbackPanel.innerHTML = `
+      <span class="verdict">${wasCorrect ? 'Correct' : 'Not quite'}</span>
+      <p>${q.explanation || ''}</p>
+    `;
+
+    checkBtn.hidden = true;
+    nextBtn.hidden = false;
+    nextBtn.textContent = current === quiz.questions.length - 1 ? 'See Results' : 'Next Question';
+  }
+
+  function checkAnswer() {
+    if (selectedOption === null || isChecked) return;
+    const q = quiz.questions[current];
+    const wasCorrect = selectedOption === q.correctIndex;
+
+    if (!answered[current]) {
+      if (wasCorrect) score++;
+      answered[current] = { selected: selectedOption, correct: wasCorrect };
+    }
+
+    revealAnswer(selectedOption);
+    updateScoreBadge();
+    updateRepTracker();
+  }
+
+  function nextQuestion() {
+    if (current < quiz.questions.length - 1) {
+      current++;
+      renderQuestion();
+    } else {
+      showResults();
+    }
+  }
+
+  // ---------- Results ----------
+  function showResults() {
+    questionCard.hidden = true;
+    resultsCard.hidden = false;
+
+    const total = quiz.questions.length;
+    document.getElementById('results-score').innerHTML = `${score}<span>/${total}</span>`;
+    const pct = Math.round((score / total) * 100);
+    document.getElementById('results-pct').textContent = `${pct}% correct`;
+
+    const breakdown = document.getElementById('results-breakdown');
+    breakdown.innerHTML = '';
+    quiz.questions.forEach((q, i) => {
+      const a = answered[i];
+      const row = document.createElement('div');
+      row.className = `breakdown-row ${a && a.correct ? 'right' : 'wrong'}`;
+      row.innerHTML = `<span class="breakdown-mark">${a && a.correct ? '✓' : '✕'}</span><span class="breakdown-q">Q${i + 1}. ${q.question}</span>`;
+      breakdown.appendChild(row);
+    });
+  }
+
+  function restartQuiz() {
+    if (!quiz) return;
+    current = 0;
+    score = 0;
+    answered = new Array(quiz.questions.length).fill(null);
+    resultsCard.hidden = true;
+    questionCard.hidden = false;
+    buildRepTracker();
+    renderQuestion();
+    updateScoreBadge();
+  }
+
+  // ---------- File loading ----------
+  function handleFile(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function (evt) {
+      try {
+        const data = JSON.parse(evt.target.result);
+        loadQuiz(data);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } catch (err) {
+        showError('That file isn\'t valid JSON. Double check the format and try again.');
+      }
+    };
+    reader.onerror = function () {
+      showError('Couldn\'t read that file. Please try again.');
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  }
+
+  // ---------- Wire up events ----------
+  checkBtn.addEventListener('click', checkAnswer);
+  nextBtn.addEventListener('click', nextQuestion);
+  restartBtn.addEventListener('click', restartQuiz);
+  retakeBtn.addEventListener('click', restartQuiz);
+  fileInput.addEventListener('change', handleFile);
+  fileInput2.addEventListener('change', handleFile);
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      if (!checkBtn.hidden && !checkBtn.disabled) checkAnswer();
+      else if (!nextBtn.hidden) nextQuestion();
+    }
+  });
+
+  // ---------- Init ----------
+  loadQuiz(DEFAULT_QUIZ);
+})();
+</script>
+</body>
+</html>
