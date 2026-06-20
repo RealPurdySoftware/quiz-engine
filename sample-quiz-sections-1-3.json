@@ -1,0 +1,54 @@
+{
+  "title": "General Knowledge Sample Quiz",
+  "description": "A short sample quiz covering general science, geography, and history — load this to confirm Quiz Engine is working before trying your own file.",
+  "questions": [
+    {
+      "question": "What is the chemical symbol for gold?",
+      "options": ["Go", "Gd", "Au", "Ag"],
+      "correctIndex": 2,
+      "explanation": "Au comes from the Latin word for gold, 'aurum.' Ag is silver, and Go/Gd are not real element symbols."
+    },
+    {
+      "question": "Which planet in our solar system has the most moons?",
+      "options": ["Jupiter", "Saturn", "Neptune", "Uranus"],
+      "correctIndex": 1,
+      "explanation": "Saturn has the most confirmed moons of any planet in the solar system, having overtaken Jupiter as new moons were discovered."
+    },
+    {
+      "question": "A recipe calls for doubling the yield. If the original recipe uses 3/4 cup of flour, how much flour is needed for the doubled batch?",
+      "options": ["1 cup", "1 1/4 cups", "1 1/2 cups", "2 cups"],
+      "correctIndex": 2,
+      "explanation": "Doubling 3/4 cup means multiplying by 2: 3/4 × 2 = 6/4 = 1 1/2 cups."
+    },
+    {
+      "question": "Which ocean is the largest by surface area?",
+      "options": ["Atlantic", "Indian", "Arctic", "Pacific"],
+      "correctIndex": 3,
+      "explanation": "The Pacific Ocean is the largest and deepest ocean, covering more area than all the continents combined."
+    },
+    {
+      "question": "In which century did the printing press become widespread in Europe, following Gutenberg's innovations?",
+      "options": ["13th century", "15th century", "17th century", "19th century"],
+      "correctIndex": 1,
+      "explanation": "Gutenberg introduced his movable-type printing press around 1440, and the technology spread rapidly across Europe through the rest of the 15th century."
+    },
+    {
+      "question": "A train travels 240 miles in 4 hours at a constant speed. What is its average speed?",
+      "options": ["40 mph", "50 mph", "60 mph", "80 mph"],
+      "correctIndex": 2,
+      "explanation": "Average speed is distance divided by time: 240 miles ÷ 4 hours = 60 mph."
+    },
+    {
+      "question": "Which gas makes up the largest percentage of Earth's atmosphere by volume?",
+      "options": ["Oxygen", "Carbon dioxide", "Nitrogen", "Argon"],
+      "correctIndex": 2,
+      "explanation": "Nitrogen makes up about 78% of the atmosphere, far more than oxygen (about 21%) or the trace gases."
+    },
+    {
+      "question": "A museum exhibit is most likely to use a timeline display when its primary goal is to:",
+      "options": ["Compare prices of similar items", "Show how an event or technology developed over time", "List the heaviest objects in the collection", "Group items by color"],
+      "correctIndex": 1,
+      "explanation": "Timelines are designed specifically to show sequence and development over time, which is why they're the natural choice for showing historical progression."
+    }
+  ]
+}

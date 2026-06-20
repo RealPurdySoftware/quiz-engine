@@ -25,6 +25,10 @@ That's it. The app launches with a built-in sample quiz, no setup required.
 
 > **Note:** `index.html` links to Google Fonts on first load for the display typeface. If you're fully offline, it gracefully falls back to your system fonts — nothing breaks.
 
+## Generating quizzes with an LLM
+
+[llm-instructions.md](./llm-instructions.md) is written to be handed directly to an LLM (Claude, ChatGPT, etc.) along with your source material — notes, a textbook chapter, a study guide. Paste both into a conversation and ask it to generate a quiz; the file includes the schema, content rules, and a ready-to-use prompt template. Save the model's output as a `.json` file and load it directly — no reformatting needed.  Place the .json file in the same folder as index.html
+
 ## Loading your own quiz
 
 Click **Load Quiz File** in the app and select any `.json` file that follows the format documented in [llm-instructions.md](./llm-instructions.md). `sample-quiz-sections-1-3.json` in this repo is a working example you can use to confirm everything's working before trying your own.
@@ -33,9 +37,6 @@ Click **Load Quiz File** in the app and select any `.json` file that follows the
 
 Quiz files are plain JSON. Full schema, field-by-field requirements, validation rules, and examples are documented in **[llm-instructions.md](./llm-instructions.md)**.
 
-## Generating quizzes with an LLM
-
-[llm-instructions.md](./llm-instructions.md) is written to be handed directly to an LLM (Claude, ChatGPT, etc.) along with your source material — notes, a textbook chapter, a study guide. Paste both into a conversation and ask it to generate a quiz; the file includes the schema, content rules, and a ready-to-use prompt template. Save the model's output as a `.json` file and load it directly — no reformatting needed.
 
 ## Project structure
 
