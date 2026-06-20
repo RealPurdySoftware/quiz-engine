@@ -1,6 +1,22 @@
 # Quiz Format & LLM Generation Instructions
 
-This file documents the JSON format used by [Quiz Engine](./README.md) and gives an LLM everything it needs to generate a compatible quiz file. If you're a human: paste this whole file into a conversation with an LLM along with your source material (notes, a textbook chapter, a study guide) and ask it to generate a quiz. If you're an LLM reading this: follow the instructions below exactly.
+This file documents the JSON format used by [Quiz Engine](./README.md) and gives an LLM everything it needs to generate a compatible quiz file. If you're an LLM reading this: follow the instructions below exactly.
+
+---
+
+## Instructions for Humans
+
+Paste this whole file into a conversation with an LLM along with your source material (notes, a textbook chapter, a study guide) and ask it to generate a quiz.
+
+### Example prompt to paste into an LLM
+
+```
+Here is my study material: [paste or attach your notes/chapter/study guide]
+
+Generate a multiple choice quiz from this material following the schema
+and rules in the attached llm-instructions.md file. Output only the raw
+JSON, no commentary or code fences.
+```
 
 ---
 
@@ -89,15 +105,3 @@ The app **cannot** validate that an answer is factually correct — only that th
 - **Ask for harder questions explicitly** if recall-level questions feel too easy: "write these as applied scenario questions, not direct definitions."
 - **Regenerate selectively.** If a handful of questions feel off after reviewing, ask the LLM to regenerate just those rather than the whole file.
 - **Keep explanations self-contained.** A good explanation should make sense even to someone who got the question wrong and has the source material closed — it's there to teach, not just confirm.
-
----
-
-## Example prompt to paste into an LLM
-
-```
-Here is my study material: [paste or attach your notes/chapter/study guide]
-
-Generate a multiple choice quiz from this material following the schema
-and rules in the attached llm-instructions.md file. Output only the raw
-JSON, no commentary or code fences.
-```
